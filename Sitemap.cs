@@ -4,54 +4,65 @@ using System.Xml.Serialization;
 
 namespace Utils.Sitemap
 {
-    [XmlRoot("urlset", Namespace = "http://www.sitemaps.org/schemas/sitemap/0.9")]
-    public class Sitemap {
-        private ArrayList map;
+	[XmlRoot("urlset", Namespace = "http://www.sitemaps.org/schemas/sitemap/0.9")]
+	public class Sitemap
+	{
+		private readonly List<SitemapLocation> _map;
 
-        public Sitemap() {
-            map = new ArrayList();
-        }
+		public Sitemap()
+		{
+			_map = new List<SitemapLocation>();
+		}
 
-        [XmlElement("url")]
-        public SitemapLocation[] Locations
-        {
-            get
-            {
-                SitemapLocation[] items = new SitemapLocation[map.Count];
-                map.CopyTo(items);
-                return items;
-            }
-            set
-            {
-                if (value == null)
-                    return;
-                SitemapLocation[] items = (SitemapLocation[]) value;
-                map.Clear();
-                foreach (SitemapLocation item in items)
-                    map.Add(item);
-            }
-        }
+		[XmlElement("url")]
+		public SitemapLocation[] Locations
+		{
+			get { return _map.ToArray(); }
+			set
+			{
+				if (value == null)
+					return;
 
-        public string GetSitemapXml() {
-            return string.Empty;
-        }
+				_map.Clear();
+				_map.AddRange(value);
+			}
+		}
 
-        public int Add(SitemapLocation item)
-        {
-            return map.Add(item);
-        }
+		public string GetSitemapXml()
+		{
+			return string.Empty;
+		}
+
+		public void Add(SitemapLocation item)
+		{
+			_map.Add(item);
+		}
 
 
-        public void WriteSitemapToFile(string path) {
+		public void ExportToFile(string path)
+		{
+			using (var fs = new FileStream(path, FileMode.Create))
+			{
+				var ns = new XmlSerializerNamespaces();
+				ns.Add("image", "http://www.google.com/schemas/sitemap-image/1.1");
 
-            using (FileStream fs = new FileStream(path, FileMode.Create)) {
+				var xs = new XmlSerializer(typeof(Sitemap));
+				xs.Serialize(fs, this, ns);
+			}
+		}
 
-                XmlSerializerNamespaces ns = new XmlSerializerNamespaces();                
-                ns.Add("image", "http://www.google.com/schemas/sitemap-image/1.1");                
+		public string Export()
+		{
+			using (var fs = new StringWriter())
+			{
+				var ns = new XmlSerializerNamespaces();
+				ns.Add("image", "http://www.google.com/schemas/sitemap-image/1.1");
 
-                XmlSerializer xs = new XmlSerializer(typeof(Sitemap));
-                xs.Serialize(fs, this, ns);
-            }
-        }
-    }
+				var xs = new XmlSerializer(typeof(Sitemap));
+				xs.Serialize(fs, this, ns);
+
+				return fs.ToString();
+			}
+		}
+	}
 }
